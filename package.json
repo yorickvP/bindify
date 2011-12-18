@@ -1,0 +1,17 @@
+{
+  "author": "Yorick (http://yorick.no-ip.org/blog/)",
+  "name": "bindify",
+  "description": "Parameter binding for your functions",
+  "version": "0.0.0",
+  "homepage": "http://github.com/yorickvP/bindify",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/yorickvP/bindify.git"
+  },
+  "main": "bindify.js",
+  "engines": {
+    "node": "*"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}
