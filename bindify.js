@@ -49,7 +49,6 @@ function bindify(f /* , thisObj, *args */) {
                     bArgsi += n(fArgs, fThis, bArgs, bArgsi) }
                 else bArgs[bArgsi++] = n })
         // if we're being called like new fBound
-        console.log(Object.getPrototypeOf(this))
         if (this instanceof fNop) bArgs[0] = this
         // .call.apply is faster than doing it using apply(bArgs[0], bArgs.slice(1))
         return Function.prototype.call.apply(f, bArgs) }
