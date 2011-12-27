@@ -16,16 +16,16 @@ Bindify
 	b_fy(f, null, 1, 2)(3); // f.call(null, 1, 2)
 
 	// but you can specify placeholder arguments!
-	b_fy(g, null, 3, b_fy(0), 5)(4); // f.call(null, 4)
+	b_fy(g, null, 3, b_fy(0), 5)(4); // g.call(null, 3, 4, 5)
 
 	function h(a, b, c) {
 		return this.q + a + b + c
 	}
 
 	// it has a thisobj param too
-	b_fy(h, {q: 1}, 2, 3, 4)(); // f.call({q: 1}, 2, 3, 4)
+	b_fy(h, {q: 1}, 2, 3, 4)(); // h.call({q: 1}, 2, 3, 4)
 	// and you can put placeholders in it!
-	b_fy(h, b_fy(0), 2, 3, 4)({q: 1}); // f.call({q: 1}, 2, 3, 4)
+	b_fy(h, b_fy(0), 2, 3, 4)({q: 1}); // h.call({q: 1}, 2, 3, 4)
 
 	// but wait, there's more:
 	function i(a, b, c) {
