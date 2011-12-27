@@ -2,7 +2,7 @@
   "author": "Yorick (http://yorick.no-ip.org/blog/)",
   "name": "bindify",
   "description": "Parameter binding for your functions",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "homepage": "http://github.com/yorickvP/bindify",
   "repository": {
     "type": "git",
