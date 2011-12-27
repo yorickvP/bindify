@@ -25,33 +25,40 @@ function bindify(f /* , thisObj, *args */) {
         else if (typeof f == 'number') return bindify.addArgGetter(f)
         else throw new TypeError('tried to bind a non-function') }
 
-    var aArgs = [].slice.call(arguments, 1)
+    var boundArgs = [].slice.call(arguments, 1)
     // find out which arguments need to be executed and store their keys
-      , eArgs = aArgs.map(bindify.has.bind(bindify)).reduce(function(p, c, i){
-            if (c) p.push(i)
+      , specialArgs = boundArgs.reduce(function(p, c, i){
+            if (bindify.isspecialified(c)) p.push(i)
             return p }, [])
       , fNop = function() {}
       , fBound = function() {
-        var fArgs = arguments
-          , fThis = this
-        // assume eArgs is sorted, it should be unless .map is implemented in a strange way
-        // keep an index for eArgs, and check where the next key is supposed to be
-        // if it matches, perform the replacement and move on to the next key
-          , eArgsi = 0
-          , bArgsi = 0
-          , bArgs = (eArgs.length == 0) ? aArgs.slice() : 
-                new Array(eArgs.reduce(function(p, c) {
-                    return p + aArgs[c](fArgs, fThis, null, -1) }, 0))
-        if (eArgs.length != 0)
-            aArgs.forEach(function(n, aArgsi) {
-                if (eArgs[eArgsi] == aArgsi) {
-                    ++eArgsi
-                    bArgsi += n(fArgs, fThis, bArgs, bArgsi) }
-                else bArgs[bArgsi++] = n })
+        var calledArgs = arguments
+          , calledThis = this
+          , processedArgs
+        if (specialArgs.length == 0)
+        	processedArgs = boundArgs.slice()
+        else {
+	        // assume specialArgs is sorted, it should be unless .map is implemented in a strange way
+	        // keep an index for specialArgs, and check where the next key is supposed to be
+	        // if it matches, perform the replacement and move on to the next key
+        	// first figure out the array length, so there's less malloc
+        	processedArgs = 
+                new Array(boundArgs.length - specialArgs.length +
+	                      specialArgs.reduce(function(p, c) {
+                    return p + boundArgs[c](calledArgs, calledThis, null, -1) }, 0))
+            // magic time
+            var specialArgsi = 0
+              , processedArgsi = 0
+            boundArgs.forEach(function(n, boundArgsi) {
+                if (specialArgs[specialArgsi] == boundArgsi) {
+                    ++specialArgsi
+                    processedArgsi += n(calledArgs, calledThis, processedArgs, processedArgsi) }
+                else processedArgs[processedArgsi++] = n }) }
+
         // if we're being called like new fBound
-        if (this instanceof fNop) bArgs[0] = this
-        // .call.apply is faster than doing it using apply(bArgs[0], bArgs.slice(1))
-        return Function.prototype.call.apply(f, bArgs) }
+        if (this instanceof fNop) processedArgs[0] = this
+        // .call.apply is faster than doing it using apply(processedArgs[0], processedArgs.slice(1))
+        return Function.prototype.call.apply(f, processedArgs) }
 
     // make sure new x works, no Object.create because instanceof
     fNop.prototype = f.prototype || {}
@@ -59,20 +66,19 @@ function bindify(f /* , thisObj, *args */) {
     return fBound }
 
 ;(function(a) { for (var k in a) bindify[k] = a[k] })({
-    special_funcs: []
-  , has: function(f) {
-        return this.special_funcs.indexOf(f) != -1 || (f && f._is_bindify_special_func) }
-  , add: function(f) {
-        this.special_funcs.push(f)
+    isspecialified: function(f) {
+        return f && f._is_bindify_special_func }
+  , specialify: function(f) {
+        f._is_bindify_special_func = true
         return this }
-  , remove: function(f) {
-        this.special_funcs.splice(this.special_funcs.indexOf(f), 1) 
+  , unspecialify: function(f) {
+        delete f._is_bindify_special_func
         return this }
   , addArgGetter: function(i) {
         function ArgGet(args, thisobj, arr, arridx) {
             if (arridx != -1) arr[arridx] = args[i]
             return 1 }
-        this.add(ArgGet)
+        this.specialify(ArgGet)
         return this['_' + i] = ArgGet }})
 
 // this is the reason for the entire IIFE. for loops that can't keep their scope
@@ -81,10 +87,10 @@ function bindify(f /* , thisObj, *args */) {
 for(var i = 0; i < 10; i++) bindify.addArgGetter(i)
 
 // want more than 10? bindify.addArgGetter(n)
-bindify.add(bindify._args = function(args, thisobj, arr, arridx) {
+bindify.specialify(bindify._args = function(args, thisobj, arr, arridx) {
     if (arridx != -1) arr[arridx] = [].slice.call(args)
     return 1 })
-bindify.add(bindify._this = function(args, thisobj, arr, arridx) {
+bindify.specialify(bindify._this = function(args, thisobj, arr, arridx) {
     if (arridx != -1) arr[arridx] = thisobj
     return 1 })
 
@@ -93,12 +99,12 @@ bindify._argslice = function(begin, end) {
     function ArgSlice(args, thisobj, arr, arridx) {
         if (arridx == -1) // try to find the slice length without actually calling it
             return Math.min(args.length, end == undefined ? args.length : end < 0 ? args.length + end : end) -
-                   Math.max(0, begin < 0 ? args.length + begin : begin)
+                   Math.max(0, begin == undefined ? 0 : begin < 0 ? args.length + begin : begin)
         var sliced = [].slice.call(args, begin, end)
         sliced.forEach(function(s) {
             arr[arridx++] = s })
         return sliced.length }
-    ArgSlice._is_bindify_special_func = true
+    bindify.specialify(ArgSlice)
     return ArgSlice }
 
 // in case anyone would want to pass bindify._2 or something
@@ -106,6 +112,7 @@ bindify._wrap = function(n) {
     function Kn(args, thisobj, arr, arridx) {
         if (arridx != -1) arr[arridx] = n
         return 1 }
+    bindify.specialify(Kn)
     Kn._is_bindify_special_func = true
     return Kn }
 
