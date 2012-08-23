@@ -1,3 +1,4 @@
+[![build status](https://secure.travis-ci.org/yorickvP/bindify.png)](http://travis-ci.org/yorickvP/bindify)
 Bindify
 =======
 
