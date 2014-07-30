@@ -1,7 +1,7 @@
 Bindify
 =======
 
-[boost::bind](www.boost.org/doc/libs/release/libs/bind/)-like binding for your javascript functions!
+[boost::bind](http://www.boost.org/doc/libs/release/libs/bind/)-like binding for your javascript functions!
 
 	var b_fy = require('bindify')
 	function f(a, b) {
